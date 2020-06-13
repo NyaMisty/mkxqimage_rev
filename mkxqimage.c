@@ -199,6 +199,7 @@ size_t util_get_file_len(FILE *a1)
 //----- (00000000004017F8) ----------------------------------------------------
 int util_check_model_idx(int16_t model_idx)
 {
+#ifdef ONDEVICE
   int result; // w0
   char v3[8]; // [xsp+20h] [xbp+20h] BYREF
   FILE *stream; // [xsp+28h] [xbp+28h]
@@ -236,6 +237,10 @@ int util_check_model_idx(int16_t model_idx)
     result = -1;
   }
   return result;
+#else
+  printf("%s\n", model_nr[model_idx]);
+  return 0;
+#endif
 }
 
 //----- (0000000000401918) ----------------------------------------------------
@@ -874,11 +879,18 @@ int64_t init_pkey(EVP_MD_CTX *ctx, RSA **pem, EVP_PKEY **ppkey, int isSsh)
   int64_t result; // x0
   const EVP_MD *algo; // x0
   FILE *stream; // [xsp+38h] [xbp+38h]
-
+#ifdef ONDEVICE
   if ( isSsh == 1 )
     stream = fopen("/usr/share/xiaoqiang/public_ssh.pem", "rb");
   else
     stream = fopen("/usr/share/xiaoqiang/public.pem", "rb");
+#else
+  if ( isSsh == 1 )
+    stream = fopen("public_ssh.pem", "rb");
+  else
+    stream = fopen("public.pem", "rb");
+#endif
+
   if ( stream )
   {
     *pem = PEM_read_RSA_PUBKEY(stream, 0LL, 0LL, 0LL);
@@ -1091,8 +1103,7 @@ int64_t transpostGuid(uint8_t *a1, char *outbuf)
   char *curRow; // [xsp+130h] [xbp+130h]
   int rowI; // [xsp+138h] [xbp+138h]
   unsigned int row; // [xsp+13Ch] [xbp+13Ch]
-  char a9[32]; // [xsp+140h] [xbp+140h] BYREF
-
+  
   row = 0;
   rowI = 0;
   n = 0;
@@ -1101,16 +1112,16 @@ int64_t transpostGuid(uint8_t *a1, char *outbuf)
   {
     if ( *a1 == '-' )
     {
-      a9[32 * row++ - 0x118 + rowI] = 0;
+      mat[row++][rowI] = 0;
       rowI = 0;
     }
     else
     {
-      a9[32 * row - 0x118 + rowI++] = *a1;
+      mat[row][rowI++] = *a1;
     }
     ++a1;
   }
-  a9[32 * row - 0x118 + rowI] = 0;
+  mat[row][rowI] = 0;
   curRow = outbuf;
   while ( 1 )
   {
@@ -1148,12 +1159,22 @@ int64_t get_ssh_key()
   memset(Sn, 0, 100);
   memset(snStr, 0, 100);
   memset(magic, 0, 100);
+#ifdef ONDEVICE
   stream = popen("nvram get SN", "r");
+#else
+  stream = fopen("SN.txt", "r");
+#endif
   if ( !stream )
     return puts("Failed to run command");
+
   while ( fgets(Sn, 100, stream) )
     sscanf(Sn, "%s", snStr);
+
+#ifdef ONDEVICE
   pclose(stream);
+#else
+  fclose(stream);
+#endif
   transpostGuid("d44fb0960aa0-a5e6-4a30-250f-6d2df50a", magic);
   sprintf(Sn, "%s%s", snStr, magic);
   calcMd5(md5Output, Sn);
