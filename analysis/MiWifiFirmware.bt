@@ -1,0 +1,47 @@
+//------------------------------------------------
+//--- 010 Editor v10.0 Binary Template
+//
+//      File: MiWifiFirmware.bt
+//   Authors: Misty
+//   Version: 1.0.0
+//   Purpose: Decode xiaomi router's file structure
+//  Category: 
+// File Mask: 
+//  ID Bytes: 48 44 52 31
+//   History: 
+//------------------------------------------------
+
+struct MiRomHdr {
+    uint32 magic;
+    uint32 rsaLen;
+    uint32 crc;
+    short romType; // 0 - normal, 12 - ssh
+    short model;
+} hdr;
+
+struct MiRomFile {
+    uint16 magic;
+    uint16 rsvd0;
+    uint32 flashaddr;
+    uint32 filesize;
+    uint16 mtdid; // /dev/mtd%d
+    uint16 unk5;
+    char name[32];
+    char data[filesize];
+};
+
+uint32 fileOffs[8];
+
+local int i;
+for (i = 0; i < 8; i++) {
+    if (fileOffs[i] != 0) {
+        FSeek(fileOffs[i]);
+        MiRomFile file;
+    }
+}
+FSeek(hdr.rsaLen);
+struct MiRomSig {
+    uint32 sigsize;
+    char unk[12];
+    char sigdata[sigsize];
+} sig;
