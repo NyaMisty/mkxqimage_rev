@@ -958,20 +958,20 @@ int verify_rsa(FILE *f, int start, unsigned int size, const unsigned char *sigbu
   int result; // w0
   EVP_PKEY *pkey; // [xsp+30h] [xbp+30h] BYREF
   RSA *pem; // [xsp+38h] [xbp+38h] BYREF
-  EVP_MD_CTX ctx; // [xsp+40h] [xbp+40h] BYREF
+  EVP_MD_CTX* ctx; // [xsp+40h] [xbp+40h] BYREF
   unsigned int v15; // [xsp+74h] [xbp+74h]
   void *buf; // [xsp+78h] [xbp+78h]
   size_t cnt; // [xsp+84h] [xbp+84h]
   unsigned int v18; // [xsp+88h] [xbp+88h]
   int v19; // [xsp+8Ch] [xbp+8Ch]
-
+  ctx=EVP_MD_CTX_new();
   v18 = size;
   cnt = 0;
   pkey = 0LL;
   buf = malloc(0x10000u);
   if ( buf )
   {
-    v19 = init_pkey(&ctx, &pem, &pkey, isSsh);
+    v19 = init_pkey(ctx, &pem, &pkey, isSsh);
     if ( v19 )
     {
       fwrite("malloc failed\n", 1u, 0xEu, stderr);
@@ -987,7 +987,7 @@ int verify_rsa(FILE *f, int start, unsigned int size, const unsigned char *sigbu
           cnt = v18;
         else
           cnt = v15;
-        if ( EVP_DigestUpdate(&ctx, buf, cnt) != 1 )// EVP_VerifyUpdate
+        if ( EVP_DigestUpdate(ctx, buf, cnt) != 1 )// EVP_VerifyUpdate
         {
           fwrite("error EVP_VerifyUpdate\n", 1u, 0x17u, stderr);
           v19 = 1;
@@ -1001,7 +1001,7 @@ int verify_rsa(FILE *f, int start, unsigned int size, const unsigned char *sigbu
           goto finish;
         }
       }
-      if ( EVP_VerifyFinal(&ctx, sigbuf, siglen, pkey) == 1 )
+      if ( EVP_VerifyFinal(ctx, sigbuf, siglen, pkey) == 1 )
       {
         v19 = 0;
       }
@@ -1015,7 +1015,7 @@ finish:
       free(buf);
       RSA_free(pem);
       EVP_PKEY_free(pkey);
-      EVP_MD_CTX_cleanup(&ctx);
+      EVP_MD_CTX_free(ctx);
       result = v19;
     }
   }
